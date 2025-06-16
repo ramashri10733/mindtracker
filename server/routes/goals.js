@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
     res.json(goals);
   } catch (error) {
     console.error('Error fetching goals:', error);
-    res.status(500).json({ message: 'Error fetching goals' });
+    res.status(500).json({ message: 'Error fetching goals', error: error.message });
   }
 });
 
@@ -26,16 +26,40 @@ router.post('/', async (req, res) => {
     console.log('Creating goal for user:', req.user.id);
     console.log('Goal data:', req.body);
     
-    const { content } = req.body;
+    const { title, description, deadline } = req.body;
     
-    if (!content || content.trim() === '') {
-      console.log('Validation error: Empty goal content');
-      return res.status(400).json({ message: 'Goal content is required' });
+    // Validate required fields
+    if (!title || !description || !deadline) {
+      console.log('Validation error: Missing required fields');
+      return res.status(400).json({ 
+        message: 'All fields are required',
+        missingFields: {
+          title: !title,
+          description: !description,
+          deadline: !deadline
+        }
+      });
     }
+
+    // Check if goal with same title exists
+    const existingGoal = await Goal.findOne({ user: req.user.id, title: title.trim() });
+    if (existingGoal) {
+      console.log('Duplicate goal title found');
+      return res.status(400).json({ message: 'A goal with this title already exists' });
+    }
+
+    const timeline = [{
+      type: 'created',
+      message: 'Goal created',
+      date: new Date()
+    }];
 
     const goal = await Goal.create({
       user: req.user.id,
-      content: content.trim()
+      title: title.trim(),
+      description: description.trim(),
+      deadline: new Date(deadline),
+      timeline
     });
 
     console.log('Created goal:', goal);
@@ -49,9 +73,13 @@ router.post('/', async (req, res) => {
       });
     }
     if (error.name === 'MongoError' && error.code === 11000) {
-      return res.status(400).json({ message: 'Duplicate goal content' });
+      return res.status(400).json({ message: 'A goal with this title already exists' });
     }
-    res.status(500).json({ message: 'Error creating goal' });
+    res.status(500).json({ 
+      message: 'Error creating goal',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -72,12 +100,21 @@ router.put('/:id', async (req, res) => {
     }
 
     goal.completed = !goal.completed;
+    goal.timeline.push({
+      type: 'completed',
+      message: goal.completed ? 'Goal marked as completed' : 'Goal marked as incomplete',
+      date: new Date()
+    });
     await goal.save();
     console.log('Updated goal:', goal);
     res.json(goal);
   } catch (error) {
     console.error('Error updating goal:', error);
-    res.status(500).json({ message: 'Error updating goal' });
+    res.status(500).json({ 
+      message: 'Error updating goal',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -102,7 +139,11 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: 'Goal removed' });
   } catch (error) {
     console.error('Error deleting goal:', error);
-    res.status(500).json({ message: 'Error deleting goal' });
+    res.status(500).json({ 
+      message: 'Error deleting goal',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

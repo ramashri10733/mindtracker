@@ -38,6 +38,7 @@ app.use('/api/goals', require('./routes/goals'));
 app.use('/api/journal', require('./routes/journal'));
 app.use('/api/resources', require('./routes/resources'));
 app.use('/api/reflections', require('./routes/reflections'));
+app.use('/api/users', require('./routes/users'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

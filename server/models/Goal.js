@@ -1,5 +1,11 @@
 const mongoose = require('mongoose');
 
+const timelineEventSchema = new mongoose.Schema({
+  type: { type: String, required: true }, // e.g., 'created', 'updated', 'completed', 'deadline_changed'
+  message: { type: String },
+  date: { type: Date, default: Date.now }
+}, { _id: false });
+
 const goalSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -7,16 +13,27 @@ const goalSchema = new mongoose.Schema({
     required: [true, 'User ID is required'],
     index: true
   },
-  content: {
+  title: {
     type: String,
-    required: [true, 'Please provide goal content'],
-    trim: true,
-    minlength: [1, 'Goal content cannot be empty'],
-    maxlength: [500, 'Goal content cannot exceed 500 characters']
+    required: [true, 'Title is required'],
+    trim: true
+  },
+  description: {
+    type: String,
+    required: [true, 'Description is required'],
+    trim: true
+  },
+  deadline: {
+    type: Date,
+    required: [true, 'Deadline is required']
   },
   completed: {
     type: Boolean,
     default: false
+  },
+  timeline: {
+    type: [timelineEventSchema],
+    default: []
   },
   createdAt: {
     type: Date,
@@ -28,13 +45,28 @@ const goalSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Create compound index for user and content to prevent duplicates
-goalSchema.index({ user: 1, content: 1 }, { unique: true });
+// Drop any existing indexes
+goalSchema.pre('save', async function(next) {
+  try {
+    const collection = this.constructor.collection;
+    await collection.dropIndexes();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
-// Add validation for content
+// Create the correct indexes
+goalSchema.index({ user: 1 });
+goalSchema.index({ user: 1, title: 1 }, { unique: true });
+
+// Add validation for title and description
 goalSchema.pre('save', function(next) {
-  if (this.isModified('content')) {
-    this.content = this.content.trim();
+  if (this.isModified('title')) {
+    this.title = this.title.trim();
+  }
+  if (this.isModified('description')) {
+    this.description = this.description.trim();
   }
   next();
 });

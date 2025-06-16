@@ -3,10 +3,26 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+// Email regex: basic RFC 5322 compliant
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+// Password regex: min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
 // Register user
 router.post('/register', async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // Email validation
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format.' });
+    }
+    // Password validation
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters, include uppercase, lowercase, number, and special character.'
+      });
+    }
 
     // Check if user exists
     const userExists = await User.findOne({ email });
