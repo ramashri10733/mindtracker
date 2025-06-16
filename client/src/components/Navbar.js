@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
+import NotificationBell from './NotificationBell';
 
 function Navbar() {
   const navigate = useNavigate();
@@ -29,6 +30,10 @@ function Navbar() {
             <Link to="/resources" className="nav-link">
               Resource Library
             </Link>
+            <Link to="/profile" className="nav-link">
+              Profile
+            </Link>
+            <NotificationBell />
             <button onClick={handleLogout} className="logout-button">
               Logout
             </button>

@@ -10,6 +10,7 @@ import GoalTracker from './pages/GoalTracker';
 import DailyReflection from './pages/DailyReflection';
 import PastReflections from './pages/PastReflections';
 import ResourceLibrary from './pages/ResourceLibrary';
+import Profile from './pages/Profile';
 import { authService } from './services/api';
 
 // Protected Route component
@@ -84,6 +85,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ResourceLibrary />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: '/profile',
+        element: (
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         )
       }

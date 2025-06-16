@@ -15,6 +15,10 @@ function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  // Password: min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -26,13 +30,19 @@ function Register() {
     e.preventDefault();
     setError('');
 
+    if (!emailRegex.test(formData.email)) {
+      setError('Invalid email format');
+      return;
+    }
+    if (!passwordRegex.test(formData.password)) {
+      setError('Password must be at least 8 characters, include uppercase, lowercase, number, and special character.');
+      return;
+    }
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-
     setLoading(true);
-
     try {
       const { confirmPassword, ...registerData } = formData;
       await authService.register(registerData);

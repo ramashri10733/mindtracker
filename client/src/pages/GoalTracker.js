@@ -4,7 +4,7 @@ import { authService } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 function GoalTracker() {
-  const [goal, setGoal] = useState('');
+  const [goal, setGoal] = useState({ title: '', description: '', deadline: '' });
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -35,19 +35,29 @@ function GoalTracker() {
     }
   };
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setGoal(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!goal.trim()) {
-      setError('Goal content cannot be empty');
+    if (!goal.title.trim() || !goal.description.trim() || !goal.deadline) {
+      setError('Please fill in all required fields');
       return;
     }
 
     try {
       setError(null);
       setSuccess(null);
-      const response = await api.post('/goals', { content: goal.trim() });
+      const formattedDeadline = new Date(goal.deadline).toISOString();
+      const response = await api.post('/goals', {
+        title: goal.title.trim(),
+        description: goal.description.trim(),
+        deadline: formattedDeadline
+      });
       setGoals([response.data, ...goals]);
-      setGoal('');
+      setGoal({ title: '', description: '', deadline: '' });
       setSuccess('Goal added successfully!');
     } catch (error) {
       console.error('Error saving goal:', error);
@@ -98,16 +108,42 @@ function GoalTracker() {
       {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={goal}
-          onChange={(e) => setGoal(e.target.value)}
-          placeholder="Add a new goal..."
-          disabled={loading}
-          maxLength={500}
-        />
-        <button type="submit" disabled={loading || !goal.trim()}>
+      <form onSubmit={handleSubmit} className="goal-form">
+        <div className="form-group">
+          <label>Title *</label>
+          <input
+            type="text"
+            name="title"
+            value={goal.title}
+            onChange={handleChange}
+            placeholder="Enter goal title"
+            required
+            maxLength={200}
+          />
+        </div>
+        <div className="form-group">
+          <label>Description *</label>
+          <textarea
+            name="description"
+            value={goal.description}
+            onChange={handleChange}
+            placeholder="Describe your goal..."
+            required
+            rows="3"
+            maxLength={1000}
+          />
+        </div>
+        <div className="form-group">
+          <label>Deadline *</label>
+          <input
+            type="datetime-local"
+            name="deadline"
+            value={goal.deadline}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <button type="submit" disabled={loading || !goal.title.trim() || !goal.description.trim() || !goal.deadline}>
           Add Goal
         </button>
       </form>
@@ -124,12 +160,32 @@ function GoalTracker() {
                 onChange={() => toggleGoal(goal._id)}
                 disabled={loading}
               />
-              <span className={goal.completed ? 'completed' : ''}>
-                {goal.content}
-              </span>
-              <span className="goal-date">
-                {new Date(goal.createdAt).toLocaleDateString()}
-              </span>
+              <div className="goal-content">
+                <h3 className={goal.completed ? 'completed' : ''}>{goal.title}</h3>
+                <p className={goal.completed ? 'completed' : ''}>{goal.description}</p>
+                <div className="goal-meta">
+                  <span className="goal-deadline">
+                    Deadline: {new Date(goal.deadline).toLocaleString()}
+                  </span>
+                  <span className="goal-date">
+                    Created: {new Date(goal.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="goal-timeline">
+                  <strong>Timeline:</strong>
+                  <ul>
+                    {goal.timeline && goal.timeline.length > 0 ? (
+                      goal.timeline.map((event, idx) => (
+                        <li key={idx}>
+                          <span>[{new Date(event.date).toLocaleString()}]</span> {event.message}
+                        </li>
+                      ))
+                    ) : (
+                      <li>No timeline events yet.</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
               <button 
                 className="delete-button"
                 onClick={() => deleteGoal(goal._id)}
