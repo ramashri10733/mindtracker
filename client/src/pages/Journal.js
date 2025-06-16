@@ -81,6 +81,16 @@ function Journal() {
                 {new Date(entry.createdAt).toLocaleDateString()}
               </div>
               <div className="entry-content">{entry.content}</div>
+              {entry.relatedGoals && entry.relatedGoals.length > 0 && (
+                <div className="related-goals">
+                  <h4>Related Goals:</h4>
+                  <ul>
+                    {entry.relatedGoals.map(goal => (
+                      <li key={goal._id}>{goal.title}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           ))
         )}
